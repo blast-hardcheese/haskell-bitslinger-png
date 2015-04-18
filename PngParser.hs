@@ -23,6 +23,10 @@ data ChunkData = ChunkIHDRData {
     compressionMethod :: Int,
     filterMethod :: Int,
     interlaceMethod :: Int
+} | ChunksBITData {
+    red :: Int,
+    green :: Int,
+    blue :: Int
 } deriving Show
 
 data PngChunk = Chunk {
@@ -61,6 +65,7 @@ pngFile = Png <$> pngHeader <*> count 1 pngChunk
 
 decodeData :: B.ByteString -> Parser ChunkData
 decodeData "IHDR" = ChunkIHDRData <$> int32 <*> int32 <*> int8 <*> int8 <*> int8 <*> int8 <*> int8
+decodeData "sBIT" = ChunksBITData <$> int8 <*> int8 <*> int8 -- Incomplete implementation. Hardcoded for truecolor images.
 
 insertIndex :: Int -> B.ByteString -> B.ByteString -> B.ByteString
 insertIndex idx toInsert file = B.concat [B.take idx file, toInsert, B.drop idx file]
