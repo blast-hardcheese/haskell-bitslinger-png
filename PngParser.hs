@@ -27,6 +27,10 @@ data ChunkData = ChunkIHDRData {
     red :: Int,
     green :: Int,
     blue :: Int
+} | ChunkpHYs {
+    ppux :: Int,
+    ppuy :: Int,
+    unitSpecifier :: Int
 } deriving Show
 
 data PngChunk = Chunk {
@@ -61,11 +65,12 @@ pngChunk = do
     return $ Chunk len typ dat crc
 
 pngFile :: Parser PngStructure
-pngFile = Png <$> pngHeader <*> count 1 pngChunk
+pngFile = Png <$> pngHeader <*> count 3 pngChunk
 
 decodeData :: B.ByteString -> Parser ChunkData
 decodeData "IHDR" = ChunkIHDRData <$> int32 <*> int32 <*> int8 <*> int8 <*> int8 <*> int8 <*> int8
 decodeData "sBIT" = ChunksBITData <$> int8 <*> int8 <*> int8 -- Incomplete implementation. Hardcoded for truecolor images.
+decodeData "pHYs" = ChunkpHYs <$> int32 <*> int32 <*> int8
 
 insertIndex :: Int -> B.ByteString -> B.ByteString -> B.ByteString
 insertIndex idx toInsert file = B.concat [B.take idx file, toInsert, B.drop idx file]
