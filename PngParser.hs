@@ -9,6 +9,8 @@ import Data.Bits (shift, (.|.))
 import Data.Either
 import Data.Word (Word8)
 
+import Debug.Trace (trace)
+
 import qualified Data.ByteString as B
 import Data.Attoparsec.ByteString
 import qualified Data.Attoparsec.ByteString as AP
@@ -47,8 +49,11 @@ pngChunk :: Parser PngChunk
 pngChunk = do
     len <- int32
     typ <- AP.take 4
+    _ <- trace ("Taking " ++ (show len) ++ " bytes of " ++ (show typ)) $ return ()
     (bits, dat) <- match $ decodeData typ
+    _ <- trace ("  found: " ++ (show dat)) $ return ()
     crc <- int32
+    _ <- trace ("  CRC: " ++ (show crc)) $ return ()
     return $ Chunk len typ dat crc
 
 pngFile :: Parser PngStructure
