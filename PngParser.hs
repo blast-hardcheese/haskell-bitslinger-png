@@ -38,6 +38,7 @@ data ChunkData = ChunkIHDRData {
     text :: B.ByteString
 } | ChunkIDAT {
     bits :: B.ByteString
+} | ChunkIEND {
 } deriving Show
 
 data PngChunk = Chunk {
@@ -76,6 +77,7 @@ pngFile = do
     header <- pngHeader
     ihdr <- pngChunk Nothing
     chunks <- (many' $ pngChunk (Just ihdr))
+    _ <- endOfInput
     return $ Png header (ihdr : chunks)
 
 decodeData :: B.ByteString -> Int -> Maybe PngChunk -> Parser ChunkData
@@ -89,6 +91,7 @@ decodeData "tEXt" len _ = do
     text <- AP.take left
     return $ ChunktEXt kw text
 decodeData "IDAT" len (Just ihdrChunk) = ChunkIDAT <$> AP.take len
+decodeData "IEND" _ _ = return ChunkIEND
 
 insertIndex :: Int -> B.ByteString -> B.ByteString -> B.ByteString
 insertIndex idx toInsert file = B.concat [B.take idx file, toInsert, B.drop idx file]
