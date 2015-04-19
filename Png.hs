@@ -59,3 +59,23 @@ getCrc :: [Word8] -> Word32
 getCrc bits = xor 0xffffffff $ foldl acc 0xffffffff bits
     where acc :: Word32 -> Word8 -> Word32
           acc a x = xor (crcTable !! (fromIntegral ((xor a $ fromIntegral x) .&. 0xff))) (shift a (-8))
+
+unint8 :: Word8 -> B.ByteString
+unint8 n = B.pack [n]
+
+unint32 :: Word32 -> B.ByteString
+unint32 n = B.pack $ foldl (\a x -> (fromIntegral $ (shift n (-x * 8)) .&. 0xff) : a) [] [0..3]
+
+encodeData :: ChunkData -> B.ByteString
+encodeData (ChunkIHDRData width height bitDepth colorType compressionMethod filterMethod interlaceMethod) = B.concat [unint32 width, unint32 height, unint8 bitDepth, unint8 colorType, unint8 compressionMethod, unint8 filterMethod, unint8 interlaceMethod]
+encodeData (ChunksBITData red green blue) = B.concat [unint8 red, unint8 green, unint8 blue]
+encodeData (ChunkpHYs ppux ppuy unitSpecifier) = B.concat [unint32 ppux, unint32 ppuy, unint8 unitSpecifier]
+encodeData (ChunktEXt keyword text) = B.concat [keyword, unint8 0x00, text]
+encodeData (ChunkIDAT bits) = bits
+encodeData ChunkIEND = B.concat []
+
+encodeChunk :: PngChunk -> B.ByteString
+encodeChunk (Chunk length type' data' crc) = B.concat [unint32 length, type', encodeData data', unint32 crc]
+
+encodePng :: PngStructure -> B.ByteString
+encodePng (Png header chunks) = B.append header $ B.concat $ encodeChunk <$> chunks
