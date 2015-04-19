@@ -102,9 +102,10 @@ dropRange idx range file = B.append (B.take idx file) (B.drop (idx + range) file
 fix :: B.ByteString -> IO B.ByteString
 fix file = do
     let first = insertIndex 4 (B.pack [0x0d]) file
-    let second = first
-    B.writeFile "fixed.png" second
-    return second
+    let second = insertIndex (12 * 5 + 13 + 3 + 9 + 28 + 131072) (B.pack [0x00]) first
+    let third = insertIndex (12 * 6 + 13 + 3 + 9 + 28 + 131072 + 131072) (B.pack [0x00, 0x00, 0x00]) second
+    B.writeFile "fixed.png" third
+    return third
 
 parse :: B.ByteString -> IO (Either String String)
 parse file = do
