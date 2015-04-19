@@ -58,28 +58,12 @@ int32 = (foldl (\a x -> (shift a 8) .|. (fromIntegral x)) 0) <$> count 4 anyWord
 
 pngHeader = string $ B.pack [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
-pngChunks :: Parser [PngChunk]
-pngChunks = do
-    let chunks = []
-    _IHDR <- pngChunk chunks
-    let chunks = _IHDR : chunks
-    _sBIT <- pngChunk chunks
-    let chunks = _sBIT : chunks
-    _pHYs <- pngChunk chunks
-    let chunks = _pHYs : chunks
-    _tEXt <- pngChunk chunks
-    let chunks = _tEXt : chunks
-    _IDAT <- pngChunk chunks
-    let chunks = _IDAT : chunks
-
-    return chunks
-
-pngChunk :: [PngChunk] -> Parser PngChunk
-pngChunk chunks = do
+pngChunk :: Maybe PngChunk -> Parser PngChunk
+pngChunk maybeIHDR = do
     len <- int32
     typ <- AP.take 4
     _ <- trace ("Taking " ++ (show len) ++ " bytes of " ++ (show typ)) $ return ()
-    (bits, dat) <- match $ decodeData typ (fromIntegral len) chunks
+    (bits, dat) <- match $ decodeData typ (fromIntegral len) maybeIHDR
     _ <- trace ("  found: " ++ (show dat)) $ return ()
     crc <- int32
     _ <- trace ("  CRC: " ++ (show crc)) $ return ()
@@ -87,9 +71,13 @@ pngChunk chunks = do
     return $ Chunk len typ dat crc
 
 pngFile :: Parser PngStructure
-pngFile = Png <$> pngHeader <*> pngChunks
+pngFile = do
+    header <- pngHeader
+    ihdr <- pngChunk Nothing
+    chunks <- (many' $ pngChunk (Just ihdr))
+    return $ Png header (ihdr : chunks)
 
-decodeData :: B.ByteString -> Int -> [PngChunk] -> Parser ChunkData
+decodeData :: B.ByteString -> Int -> Maybe PngChunk -> Parser ChunkData
 decodeData "IHDR" _ _ = ChunkIHDRData <$> int32 <*> int32 <*> int8 <*> int8 <*> int8 <*> int8 <*> int8
 decodeData "sBIT" _ _ = ChunksBITData <$> int8 <*> int8 <*> int8 -- Incomplete implementation. Hardcoded for truecolor images.
 decodeData "pHYs" _ _ = ChunkpHYs <$> int32 <*> int32 <*> int8
