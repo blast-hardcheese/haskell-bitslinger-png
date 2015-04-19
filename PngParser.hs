@@ -36,6 +36,8 @@ data ChunkData = ChunkIHDRData {
 } | ChunktEXt {
     keyword :: B.ByteString,
     text :: B.ByteString
+} | ChunkIDAT {
+    bits :: B.ByteString
 } deriving Show
 
 data PngChunk = Chunk {
@@ -87,6 +89,7 @@ decodeData "tEXt" len _ = do
     let left = len - (B.length kw) - 1
     text <- AP.take left
     return $ ChunktEXt kw text
+decodeData "IDAT" len (Just ihdrChunk) = ChunkIDAT <$> AP.take len
 
 insertIndex :: Int -> B.ByteString -> B.ByteString -> B.ByteString
 insertIndex idx toInsert file = B.concat [B.take idx file, toInsert, B.drop idx file]
