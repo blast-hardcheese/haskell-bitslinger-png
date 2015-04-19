@@ -69,7 +69,8 @@ pngChunk maybeIHDR = do
     (bits, dat) <- match $ decodeData typ (fromIntegral len) maybeIHDR
     _ <- trace ("  found: " ++ (show dat)) $ return ()
     crc <- int32
-    _ <- trace ("  CRC valid: " ++ (show $ (getCrc $ B.unpack (B.append typ bits)) == crc)) $ return ()
+    let calcCRC = getCrc $ B.unpack (B.append typ bits)
+    _ <- trace ("  CRC valid: " ++ (show $ calcCRC == crc) ++ " (" ++ (show crc) ++ " == " ++ (show calcCRC) ++ ")") $ return ()
     return $ Chunk len typ dat crc
 
 pngFile :: Parser PngStructure
