@@ -31,7 +31,12 @@ pngChunk maybeIHDR = do
     typ <- AP.take 4
     _ <- trace ("Taking " ++ (show len) ++ " bytes of " ++ (show typ)) $ return ()
     (bits, dat) <- match $ decodeData typ (fromIntegral len) maybeIHDR
-    _ <- trace ("  found: " ++ (show dat)) $ return ()
+    _ <- (
+        if typ /= "IDAT" then
+            trace ("  found: " ++ (show dat)) $ return ()
+        else
+            trace ("  found IDAT") $ return ()
+        )
     crc <- int32
     let calcCRC = getCrc $ B.unpack (B.append typ bits)
     _ <- trace ("  CRC valid: " ++ (show $ calcCRC == crc) ++ " (" ++ (show crc) ++ " == " ++ (show calcCRC) ++ ")") $ return ()
