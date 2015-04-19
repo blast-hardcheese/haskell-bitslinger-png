@@ -15,6 +15,8 @@ import qualified Data.ByteString as B
 import Data.Attoparsec.ByteString
 import qualified Data.Attoparsec.ByteString as AP
 
+import Png
+
 data ChunkData = ChunkIHDRData {
     width :: Word32,
     height :: Word32,
@@ -62,6 +64,7 @@ pngChunk = do
     _ <- trace ("  found: " ++ (show dat)) $ return ()
     crc <- int32
     _ <- trace ("  CRC: " ++ (show crc)) $ return ()
+    _ <- trace ("    isValid: " ++ (show $ (getCrc $ B.unpack (B.append typ bits)) == crc)) $ return ()
     return $ Chunk len typ dat crc
 
 pngFile :: Parser PngStructure
