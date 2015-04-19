@@ -60,7 +60,7 @@ pngChunk = do
     len <- int32
     typ <- AP.take 4
     _ <- trace ("Taking " ++ (show len) ++ " bytes of " ++ (show typ)) $ return ()
-    (bits, dat) <- match $ decodeData typ
+    (bits, dat) <- match $ decodeData typ $ fromIntegral len
     _ <- trace ("  found: " ++ (show dat)) $ return ()
     crc <- int32
     _ <- trace ("  CRC: " ++ (show crc)) $ return ()
@@ -70,10 +70,10 @@ pngChunk = do
 pngFile :: Parser PngStructure
 pngFile = Png <$> pngHeader <*> count 3 pngChunk
 
-decodeData :: B.ByteString -> Parser ChunkData
-decodeData "IHDR" = ChunkIHDRData <$> int32 <*> int32 <*> int8 <*> int8 <*> int8 <*> int8 <*> int8
-decodeData "sBIT" = ChunksBITData <$> int8 <*> int8 <*> int8 -- Incomplete implementation. Hardcoded for truecolor images.
-decodeData "pHYs" = ChunkpHYs <$> int32 <*> int32 <*> int8
+decodeData :: B.ByteString -> Int -> Parser ChunkData
+decodeData "IHDR" _ = ChunkIHDRData <$> int32 <*> int32 <*> int8 <*> int8 <*> int8 <*> int8 <*> int8
+decodeData "sBIT" _ = ChunksBITData <$> int8 <*> int8 <*> int8 -- Incomplete implementation. Hardcoded for truecolor images.
+decodeData "pHYs" _ = ChunkpHYs <$> int32 <*> int32 <*> int8
 
 insertIndex :: Int -> B.ByteString -> B.ByteString -> B.ByteString
 insertIndex idx toInsert file = B.concat [B.take idx file, toInsert, B.drop idx file]
