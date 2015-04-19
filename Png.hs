@@ -28,6 +28,10 @@ data ChunkData = ChunkIHDRData {
 } | ChunktEXt {
     keyword :: B.ByteString,
     text :: B.ByteString
+} | ChunksRGB {
+    renderingIntent :: Word8
+} | Chunk____ {
+    bits :: B.ByteString
 } | ChunkIDAT {
     bits :: B.ByteString
 } | ChunkIEND {

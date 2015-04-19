@@ -60,8 +60,10 @@ decodeData "tEXt" len _ = do
     let left = len - (B.length kw) - 1
     text <- AP.take left
     return $ ChunktEXt kw text
+decodeData "sRGB" _ _ = ChunksRGB <$> int8
 decodeData "IDAT" len (Just ihdrChunk) = ChunkIDAT <$> AP.take len
 decodeData "IEND" _ _ = return ChunkIEND
+decodeData _ len _ = Chunk____ <$> AP.take len
 
 parse :: B.ByteString -> Either String PngStructure
 parse file = parseOnly (pngFile <* endOfInput) file
