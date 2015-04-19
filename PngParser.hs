@@ -7,7 +7,7 @@ import Control.Monad ((>>), (>>=))
 
 import Data.Bits (shift, (.|.))
 import Data.Either
-import Data.Word (Word8)
+import Data.Word (Word8, Word32)
 
 import Debug.Trace (trace)
 
@@ -16,28 +16,28 @@ import Data.Attoparsec.ByteString
 import qualified Data.Attoparsec.ByteString as AP
 
 data ChunkData = ChunkIHDRData {
-    width :: Int,
-    height :: Int,
-    bitDepth :: Int,
-    colorType :: Int,
-    compressionMethod :: Int,
-    filterMethod :: Int,
-    interlaceMethod :: Int
+    width :: Word32,
+    height :: Word32,
+    bitDepth :: Word8,
+    colorType :: Word8,
+    compressionMethod :: Word8,
+    filterMethod :: Word8,
+    interlaceMethod :: Word8
 } | ChunksBITData {
-    red :: Int,
-    green :: Int,
-    blue :: Int
+    red :: Word8,
+    green :: Word8,
+    blue :: Word8
 } | ChunkpHYs {
-    ppux :: Int,
-    ppuy :: Int,
-    unitSpecifier :: Int
+    ppux :: Word32,
+    ppuy :: Word32,
+    unitSpecifier :: Word8
 } deriving Show
 
 data PngChunk = Chunk {
-    length :: Int,
+    length :: Word32,
     type' :: B.ByteString,
     data' :: ChunkData,
-    crc :: Int
+    crc :: Word32
 } deriving Show
 
 data PngStructure = Png {
@@ -45,11 +45,11 @@ data PngStructure = Png {
     chunks :: [PngChunk]
 } deriving Show
 
-int8 :: Parser Int
+int8 :: Parser Word8
 int8 = fromIntegral <$> anyWord8
 
-int32 :: Parser Int
-int32 = (foldl (\a x -> (shift 8 a) .|. (fromIntegral x)) 0) <$> count 4 anyWord8
+int32 :: Parser Word32
+int32 = (foldl (\a x -> (shift a 8) .|. (fromIntegral x)) 0) <$> count 4 anyWord8
 
 pngHeader = string $ B.pack [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
