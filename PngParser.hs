@@ -17,42 +17,6 @@ import qualified Data.Attoparsec.ByteString as AP
 
 import Png
 
-data ChunkData = ChunkIHDRData {
-    width :: Word32,
-    height :: Word32,
-    bitDepth :: Word8,
-    colorType :: Word8,
-    compressionMethod :: Word8,
-    filterMethod :: Word8,
-    interlaceMethod :: Word8
-} | ChunksBITData {
-    red :: Word8,
-    green :: Word8,
-    blue :: Word8
-} | ChunkpHYs {
-    ppux :: Word32,
-    ppuy :: Word32,
-    unitSpecifier :: Word8
-} | ChunktEXt {
-    keyword :: B.ByteString,
-    text :: B.ByteString
-} | ChunkIDAT {
-    bits :: B.ByteString
-} | ChunkIEND {
-} deriving Show
-
-data PngChunk = Chunk {
-    length :: Word32,
-    type' :: B.ByteString,
-    data' :: ChunkData,
-    crc :: Word32
-} deriving Show
-
-data PngStructure = Png {
-    header :: B.ByteString,
-    chunks :: [PngChunk]
-} deriving Show
-
 int8 :: Parser Word8
 int8 = fromIntegral <$> anyWord8
 
