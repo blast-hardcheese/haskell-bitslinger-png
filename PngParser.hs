@@ -106,22 +106,34 @@ fix :: B.ByteString -> IO B.ByteString
 fix file = do
     let res = foldl (\ a f -> f a) file [
                 insertIndex 4 (B.pack [0x0d]),
-                insertIndex (12 * 5  + 13 + 3 + 9 + 28 + 131072 * 1) (B.pack [0x00]),
-                insertIndex (12 * 6  + 13 + 3 + 9 + 28 + 131072 * 2) (B.pack [0x00, 0x00, 0x00]),
-                insertIndex (12 * 7  + 13 + 3 + 9 + 28 + 131072 * 3) (B.pack [0x00]),
-                insertIndex (12 * 9  + 13 + 3 + 9 + 28 + 131072 * 5) (B.pack [0x00, 0x00, 0x00]),
-                insertIndex (12 * 10 + 13 + 3 + 9 + 28 + 131072 * 6) (B.pack [0x00]),
-                insertIndex (12 * 11 + 13 + 3 + 9 + 28 + 131072 * 7) (B.pack [0x00, 0x00]),
-                insertIndex (12 * 11 + 13 + 3 + 9 + 28 + 131072 * 9) (B.pack [0x00])
+                insertIndex (sum $ Prelude.take 5 sizes) (B.pack [0x00]),
+                insertIndex (sum $ Prelude.take 6 sizes) (B.pack [0x00, 0x00, 0x00]),
+                insertIndex (sum $ Prelude.take 7 sizes) (B.pack [0x00]),
+                insertIndex (sum $ Prelude.take 9 sizes) (B.pack [0x00, 0x00, 0x00]),
+                insertIndex (sum $ Prelude.take 10 sizes) (B.pack [0x00]),
+                insertIndex (sum $ Prelude.take 11 sizes) (B.pack [0x00, 0x00]),
+                insertIndex (sum $ Prelude.take 13 sizes) (B.pack [0x00])
             ]
 
     B.writeFile "fixed.png" res
     return res
-
-parse :: B.ByteString -> IO (Either String String)
-parse file = do
-    parseTest pngFile file
-    return $ Left "Not implemented"
+    where sizes = [
+                      4 * 3 + 13,
+                      4 * 3 + 3,
+                      4 * 3 + 9,
+                      4 * 3 + 28,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 131072,
+                      4 * 3 + 8559,
+                      4 * 3 + 0
+                  ]
 
 parse :: B.ByteString -> Either String PngStructure
 parse file = parseOnly (pngFile <* endOfInput) file
