@@ -7,5 +7,6 @@ import PngParser (parse, fix)
 
 main :: IO ()
 main = do
-    result <- (B.readFile "corrupt_735acee15fa4f3be8ecd0c6bcf294fd4.png" >>= fix >>= parse)
-    putStrLn "hey"
+    fixed <- (B.readFile "corrupt_735acee15fa4f3be8ecd0c6bcf294fd4.png" >>= fix)
+    let res = parse fixed
+    putStrLn $ show res

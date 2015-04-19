@@ -2,7 +2,7 @@
 
 module PngParser where
 
-import Control.Applicative ((<$>), (*>), (<*>))
+import Control.Applicative ((<$>), (*>), (<*>), (<*))
 import Control.Monad ((>>), (>>=))
 
 import Data.Bits (shift, (.|.))
@@ -122,3 +122,6 @@ parse :: B.ByteString -> IO (Either String String)
 parse file = do
     parseTest pngFile file
     return $ Left "Not implemented"
+
+parse :: B.ByteString -> Either String PngStructure
+parse file = parseOnly (pngFile <* endOfInput) file
