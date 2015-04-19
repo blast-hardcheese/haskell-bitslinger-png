@@ -81,13 +81,6 @@ fix file = do
                 insertIndex (sum $ Prelude.take 10 sizes) (B.pack [0x00]),
                 insertIndex (sum $ Prelude.take 11 sizes) (B.pack [0x00, 0x00]),
                 insertIndex (sum $ Prelude.take 13 sizes) (B.pack [0x00]),
-                replaceRange ((sum $ Prelude.take 5 sizes) + 4) 4 (B.pack [0xb9, 0x99, 0x5a, 0x29]),
-                replaceRange ((sum $ Prelude.take 6 sizes) + 4) 4 (B.pack [0xc0, 0x20, 0xd4, 0x8e]),
-                replaceRange ((sum $ Prelude.take 7 sizes) + 4) 4 (B.pack [0xe6, 0xfa, 0x81, 0x19]),
-                replaceRange ((sum $ Prelude.take 9 sizes) + 4) 4 (B.pack [0x40, 0x97, 0x2c, 0xb9]),
-                replaceRange ((sum $ Prelude.take 10 sizes) + 4) 4 (B.pack [0x7e, 0xec, 0x79, 0xb0]),
-                replaceRange ((sum $ Prelude.take 11 sizes) + 4) 4 (B.pack [0xd9, 0x3d, 0xb4, 0xef]),
-                replaceRange ((sum $ Prelude.take 13 sizes) + 4) 4 (B.pack [0x61, 0xf4, 0x32, 0xa4]),
                 replaceRange 0 0 (B.pack [])
             ]
 
