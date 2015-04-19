@@ -33,6 +33,9 @@ data ChunkData = ChunkIHDRData {
     ppux :: Word32,
     ppuy :: Word32,
     unitSpecifier :: Word8
+} | ChunktEXt {
+    keyword :: B.ByteString,
+    text :: B.ByteString
 } deriving Show
 
 data PngChunk = Chunk {
@@ -74,6 +77,12 @@ decodeData :: B.ByteString -> Int -> Parser ChunkData
 decodeData "IHDR" _ = ChunkIHDRData <$> int32 <*> int32 <*> int8 <*> int8 <*> int8 <*> int8 <*> int8
 decodeData "sBIT" _ = ChunksBITData <$> int8 <*> int8 <*> int8 -- Incomplete implementation. Hardcoded for truecolor images.
 decodeData "pHYs" _ = ChunkpHYs <$> int32 <*> int32 <*> int8
+decodeData "tEXt" len = do
+    kw <- AP.takeWhile (/= 0x00)
+    _ <- word8 0x00
+    let left = len - (B.length kw) - 1
+    text <- AP.take left
+    return $ ChunktEXt kw text
 
 insertIndex :: Int -> B.ByteString -> B.ByteString -> B.ByteString
 insertIndex idx toInsert file = B.concat [B.take idx file, toInsert, B.drop idx file]
