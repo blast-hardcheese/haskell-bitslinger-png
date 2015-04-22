@@ -3,15 +3,19 @@
 module Main where
 
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 import Control.Applicative ((<$>))
 
 import Debug.Trace (trace)
 
 import Data.Word (Word8, Word32)
 import Data.Maybe (fromMaybe)
+import Data.Either
 
-import PngParser (parse)
+import PngParser (parse, parsePixels)
 import Png
+
+import qualified Codec.Compression.Zlib as Z
 
 recrc :: PngChunk -> PngChunk
 recrc chunk = chunk { crc = getCrc $ B.unpack $ B.append (type' chunk) (encodeData $ data' chunk) }
@@ -104,13 +108,46 @@ fix file = do
 
 main :: IO ()
 main = do
-    fixed <- (B.readFile "corrupt_735acee15fa4f3be8ecd0c6bcf294fd4.png" >>= fix)
-    let (Right res) = parse fixed
-    putStrLn "Seems to have parsed"
+    -- fixed <- (B.readFile "corrupt_735acee15fa4f3be8ecd0c6bcf294fd4.png" >>= fix)
+    fixed <- B.readFile "samples/white-2x1.png"
+    let res = (parse fixed)
+    putStrLn $ if isLeft res then
+            show res
+        else
+            seq res "Seems to have parsed"
 
-    let curChunk = bits $ data' $ (chunks res) !! 7
-    let newlines = B.findIndices (== 10) curChunk
-    putStrLn $ show newlines
+    let (Right img) = res
+    let z = bits $ data' $ (chunks img) !! 4
+    let ihdr = (chunks img) !! 0
 
-    x <- sequence $ (iteralter res) <$> newlines
+    let dat = extractDecompressedData img
+    let (Right parsed) = parsePixels (data' ihdr) $ dat
+    let newChunks = relen <$> recrc <$> (chunkImageData 255 $ encodePixelsCompressed parsed)
+    putStrLn $ "Decompressed! " ++ (show dat)
+    putStrLn $ "Decompressed! " ++ (show parsed)
+    putStrLn $ "Chunked: " ++ (show newChunks)
+
+    let png = encodePng $ Png (B.pack [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]) $ (relen <$> recrc <$> [
+                    Chunk 0 "IHDR" (ChunkIHDRData 1 2 8 2 0 0 0) 0,
+                    Chunk 0 "pHYs" (ChunkpHYs 2835 2835 1) 0
+                ]) ++ newChunks
+
+    _ <- B.writeFile "/tmp/out.png" png
+
+    let res = parse png
+    putStrLn $ if isLeft res then
+            show res
+        else
+            seq res "Seems to have parsed"
+
+    let (Right img) = res
+
+    let dat = extractDecompressedData img
+    let (Right parsed) = parsePixels (data' ihdr) $ dat
+    let newChunks = relen <$> recrc <$> (chunkImageData 255 $ encodePixelsCompressed parsed)
+    putStrLn $ "Decompressed! " ++ (show dat)
+    putStrLn $ "Decompressed! " ++ (show parsed)
+    putStrLn $ "Chunked: " ++ (show newChunks)
+
+
     putStrLn "Done"
