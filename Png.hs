@@ -14,6 +14,9 @@ import qualified Codec.Compression.Zlib as Z
 
 import Debug.Trace (trace)
 
+pngMagic :: B.ByteString
+pngMagic = B.pack [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+
 data IDATPixel = TrueColorPixel Word8 Word8 Word8
     deriving Show
 
@@ -62,7 +65,6 @@ data PngChunk = Chunk {
 } deriving Show
 
 data PngStructure = Png {
-    header :: B.ByteString,
     chunks :: [PngChunk]
 } deriving Show
 
@@ -99,10 +101,10 @@ encodeChunk :: PngChunk -> B.ByteString
 encodeChunk (Chunk length type' data' crc) = B.concat [unint32 length, type', encodeData data', unint32 crc]
 
 encodePng :: PngStructure -> B.ByteString
-encodePng (Png header chunks) = B.append header $ B.concat $ encodeChunk <$> chunks
+encodePng (Png chunks) = B.append pngMagic $ B.concat $ encodeChunk <$> chunks
 
 extractData :: PngStructure -> B.ByteString
-extractData (Png _ chunks) = B.concat $ bits <$> data' <$> idats
+extractData (Png chunks) = B.concat $ bits <$> data' <$> idats
     where idats = Prelude.filter ((== "IDAT") . type') chunks
 
 extractDecompressedData :: PngStructure -> B.ByteString

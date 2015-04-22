@@ -23,7 +23,7 @@ int8 = fromIntegral <$> anyWord8
 int32 :: Parser Word32
 int32 = (foldl (\a x -> (shift a 8) .|. (fromIntegral x)) 0) <$> count 4 anyWord8
 
-pngHeader = string $ B.pack [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+pngHeader = string $ pngMagic
 
 pngChunk :: Maybe PngChunk -> Parser PngChunk
 pngChunk maybeIHDR = do
@@ -48,7 +48,7 @@ pngFile = do
     ihdr <- pngChunk Nothing
     chunks <- (many' $ pngChunk (Just ihdr))
     _ <- endOfInput
-    return $ Png header (ihdr : chunks)
+    return $ Png (ihdr : chunks)
 
 decodeData :: B.ByteString -> Int -> Maybe PngChunk -> Parser ChunkData
 decodeData "IHDR" _ _ = ChunkIHDRData <$> int32 <*> int32 <*> int8 <*> int8 <*> int8 <*> int8 <*> int8
