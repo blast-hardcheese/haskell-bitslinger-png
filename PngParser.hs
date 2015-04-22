@@ -65,5 +65,23 @@ decodeData "IDAT" len (Just ihdrChunk) = ChunkIDAT <$> AP.take len
 decodeData "IEND" _ _ = return ChunkIEND
 decodeData _ len _ = Chunk____ <$> AP.take len
 
+dataParser :: ChunkData -> Parser IDATUnpacked
+dataParser (ChunkIHDRData width height bitDepth colorType compressionMethod filterMethod interlaceMethod) = IDATUnpacked <$> (AP.count h rowParser)
+    where w = fromIntegral $ width
+          h = fromIntegral $ height
+          pixelWidth = 3
+
+          rowParser :: Parser IDATRow
+          rowParser = IDATRow <$> int8 <*> (AP.count w pixelParser)
+
+          pixelParser :: Parser IDATPixel
+          pixelParser = TrueColorPixel <$> int8 <*> int8 <*> int8
+
 parse :: B.ByteString -> Either String PngStructure
 parse file = parseOnly (pngFile <* endOfInput) file
+
+parsePixels :: ChunkData -> B.ByteString -> Either String IDATUnpacked
+parsePixels header = handle . (AP.parse $ dataParser header)
+    where handle (Fail _ _ e) = Left e
+          handle (Partial _) = Left "Insufficient data"
+          handle (Done _ r) = Right r
