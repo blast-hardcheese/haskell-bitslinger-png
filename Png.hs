@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Png where
 
 import Control.Applicative ((<$>), (*>), (<*>))
@@ -5,9 +7,24 @@ import Control.Monad ((>>), (>>=))
 
 import Data.Bits (shift, xor, (.|.), (.&.))
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as BL
 import Data.Word (Word8, Word32)
 
+import qualified Codec.Compression.Zlib as Z
+
 import Debug.Trace (trace)
+
+data IDATPixel = TrueColorPixel Word8 Word8 Word8
+    deriving Show
+
+data IDATRow = IDATRow {
+    filterType :: Word8,
+    pixels :: [IDATPixel]
+} deriving Show
+
+data IDATUnpacked = IDATUnpacked {
+    rows :: [IDATRow]
+} deriving Show
 
 data ChunkData = ChunkIHDRData {
     width :: Word32,
@@ -83,3 +100,10 @@ encodeChunk (Chunk length type' data' crc) = B.concat [unint32 length, type', en
 
 encodePng :: PngStructure -> B.ByteString
 encodePng (Png header chunks) = B.append header $ B.concat $ encodeChunk <$> chunks
+
+extractData :: PngStructure -> B.ByteString
+extractData (Png _ chunks) = B.concat $ bits <$> data' <$> idats
+    where idats = Prelude.filter ((== "IDAT") . type') chunks
+
+extractDecompressedData :: PngStructure -> B.ByteString
+extractDecompressedData = BL.toStrict . Z.decompress . BL.fromStrict . extractData
