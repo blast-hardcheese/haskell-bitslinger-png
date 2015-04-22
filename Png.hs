@@ -107,3 +107,19 @@ extractData (Png _ chunks) = B.concat $ bits <$> data' <$> idats
 
 extractDecompressedData :: PngStructure -> B.ByteString
 extractDecompressedData = BL.toStrict . Z.decompress . BL.fromStrict . extractData
+
+encodePixels :: IDATUnpacked -> B.ByteString
+encodePixels (IDATUnpacked rows) = B.concat $ encodeRow <$> rows
+    where encodeRow (IDATRow filterType pixels) = B.append (unint8 filterType) $ B.concat (encodePixels <$> pixels)
+          encodePixels :: IDATPixel -> B.ByteString
+          encodePixels (TrueColorPixel red green blue) = B.concat [unint8 red, unint8 green, unint8 blue]
+
+encodePixelsCompressed :: IDATUnpacked -> B.ByteString
+encodePixelsCompressed = BL.toStrict . Z.compress . BL.fromStrict . encodePixels
+
+chunkImageData :: Int -> B.ByteString -> [PngChunk]
+chunkImageData chunkSize dat = work $ B.splitAt chunkSize dat
+    where toChunk dat = Chunk 0 "IDAT" (ChunkIDAT dat) 0
+          work :: (B.ByteString, B.ByteString) -> [PngChunk]
+          work (first, "") = [toChunk first]
+          work (first, rest) = (toChunk first) : (chunkImageData chunkSize rest)
